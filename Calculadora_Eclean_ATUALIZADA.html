@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eclean Limpezas - Orçamento</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:14px;background:#f3f6f8;font-family:Arial,sans-serif;color:#222}
+.box{max-width:620px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 4px 18px #00000012}
+h1{margin:0;color:#173b57;font-size:26px}
+.sub{color:#66727d;line-height:1.4}
+label{display:block;font-weight:bold;margin:15px 0 7px}
+select,input{width:100%;height:50px;border:1px solid #cbd4db;border-radius:11px;padding:0 12px;font-size:16px;background:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.extra{display:flex;align-items:center;gap:10px;margin:10px 0;font-weight:normal}
+.extra input{width:21px;height:21px}
+button{width:100%;height:52px;border:0;border-radius:11px;background:#173b57;color:#fff;font-size:17px;font-weight:bold;margin-top:18px}
+#resultado{display:none;margin-top:18px;padding:18px;background:#f5f9fc;border-radius:14px;border:1px solid #d7e1e8}
+.valor{font-size:32px;font-weight:bold;color:#173b57;margin:5px 0 14px}
+.horas{font-size:20px;font-weight:bold;color:#173b57}
+.erro{display:none;color:#9b2226;background:#fff0f0;padding:10px;border-radius:9px;margin-top:12px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>Eclean Limpezas</h1>
+<p class="sub">Preencha os dados do imóvel para calcular uma estimativa de tempo e valor.</p>
+
+<div class="grid">
+<div>
+<label for="tipo">Tipo de limpeza</label>
+<select id="tipo">
+<option value="manutencao">Limpeza de manutenção</option>
+<option value="pesada">Limpeza pesada</option>
+<option value="mudanca">Pré ou pós-mudança</option>
+</select>
+</div>
+<div>
+<label for="tamanho">Tamanho do imóvel</label>
+<select id="tamanho">
+<option value="0">Até 50 m²</option>
+<option value="1">51 a 80 m²</option>
+<option value="2">81 a 120 m²</option>
+<option value="3">121 a 160 m²</option>
+<option value="4">161 a 200 m²</option>
+<option value="5">Acima de 200 m²</option>
+</select>
+</div>
+</div>
+
+<div class="grid">
+<div>
+<label for="banheiros">Banheiros</label>
+<input id="banheiros" type="number" min="1" max="10" value="1">
+</div>
+<div>
+<label for="quartos">Quartos</label>
+<input id="quartos" type="number" min="0" max="10" value="2">
+</div>
+</div>
+
+<label>Serviços extras</label>
+<label class="extra"><input type="checkbox" class="extraItem" data-preco="35" data-horas="1"> Limpeza de forno — R$ 35</label>
+<label class="extra"><input type="checkbox" class="extraItem" data-preco="30" data-horas="1"> Limpeza de geladeira — R$ 30</label>
+<label class="extra"><input type="checkbox" class="extraItem" data-preco="40" data-horas="1.5"> Limpeza de janelas/vidros — a partir de R$ 40</label>
+<label class="extra"><input type="checkbox" class="extraItem" data-preco="40" data-horas="1.5"> Limpeza interna de armários — a partir de R$ 40</label>
+<label class="extra"><input type="checkbox" class="extraItem" data-preco="50" data-horas="2"> Outro serviço especial — a partir de R$ 50</label>
+
+<label for="cliente">Seu nome</label>
+<input id="cliente" type="text" placeholder="Digite seu nome">
+
+<label for="telefone">Seu WhatsApp</label>
+<input id="telefone" type="tel" placeholder="(00) 00000-0000" inputmode="tel">
+
+<button type="button" onclick="calcularOrcamento()">CALCULAR ORÇAMENTO</button>
+<div id="erro" class="erro"></div>
+
+<div id="resultado">
+<div>Tempo recomendado:</div>
+<div id="horas" class="horas"></div>
+<div style="margin-top:14px">Valor estimado:</div>
+<div id="preco" class="valor"></div>
+<div id="detalhes" class="sub"></div>
+<button type="button" onclick="enviarWhatsApp()" style="background:#168c4a;margin-top:16px">ENVIAR ORÇAMENTO PELO WHATSAPP</button>
+<p class="sub" style="font-size:12px;margin-bottom:0">O WhatsApp abrirá com os dados do orçamento preenchidos.</p>
+</div>
+</div>
+
+<script>
+function calcularOrcamento(){
+  var tipo=document.getElementById("tipo").value;
+  var tamanho=parseInt(document.getElementById("tamanho").value,10);
+  var ban=parseInt(document.getElementById("banheiros").value,10);
+  var quartos=parseInt(document.getElementById("quartos").value,10);
+
+  if(isNaN(ban)||ban<1) ban=1;
+  if(ban>10) ban=10;
+  if(isNaN(quartos)||quartos<0) quartos=0;
+  if(quartos>10) quartos=10;
+
+  /*
+   * PREÇOS-BASE E TEMPO:
+   * Manutenção: 160 / 190 / 220 / 250 / 285 / 340
+   * Pesada:     190 / 225 / 260 / 295 / 335 / 400
+   * Mudança:    220 / 250 / 290 / 330 / 370 / 450
+   *
+   * Faixas definidas para manter a Eclean competitiva em Ponta Grossa
+   * e aumentar o preço conforme o esforço do serviço.
+   */
+  var bases = {
+    manutencao:[160,190,220,250,285,340],
+    pesada:[190,225,260,295,335,400],
+    mudanca:[220,250,290,330,370,450]
+  };
+
+  var horasBase=[4,5,6,7,8,10][tamanho];
+
+  /* Complexidade: banheiros adicionais exigem mais tempo de limpeza. */
+  var horasAmbientes=0;
+  if(ban>1) horasAmbientes+=(ban-1)*0.5;
+
+  /* Acima de 3 quartos, há mais áreas para limpeza e organização. */
+  if(quartos>3) horasAmbientes+=(quartos-3)*0.25;
+
+  var itens=document.querySelectorAll(".extraItem");
+  var extras=0;
+  var horasExtras=0;
+
+  for(var i=0;i<itens.length;i++){
+    if(itens[i].checked){
+      extras+=Number(itens[i].getAttribute("data-preco"))||0;
+      horasExtras+=Number(itens[i].getAttribute("data-horas"))||0;
+    }
+  }
+
+  var horas=horasBase;
+  if(tipo==="pesada") horas+=1;
+  if(tipo==="mudanca") horas+=2;
+  horas+=horasAmbientes+horasExtras;
+
+  horas=Math.ceil(horas*2)/2;
+  if(horas<4) horas=4;
+
+  /*
+   * O preço-base já diferencia o tipo de limpeza.
+   * Banheiros/quartos adicionais recebem acréscimo porque aumentam
+   * o trabalho mesmo quando a metragem é a mesma.
+   */
+  var preco=bases[tipo][tamanho];
+
+  var adicionalBanheiros=Math.max(0,ban-1)*15;
+  var adicionalQuartos=Math.max(0,quartos-3)*10;
+
+  preco += adicionalBanheiros + adicionalQuartos + extras;
+
+  /*
+   * Acima de 12h, a calculadora não promete uma única diária.
+   * O preço continua sendo uma estimativa mínima e poderá ser ajustado
+   * pela Eclean após conferir as condições do imóvel.
+   */
+  var maisDeUmaDiaria=horas>12;
+  var horasExibicao=Math.min(horas,12);
+
+  preco=Math.ceil(preco/5)*5;
+
+  var textoHoras=horas.toLocaleString("pt-BR")+" horas";
+  if(maisDeUmaDiaria){
+    textoHoras+=" (estimativa total; pode ser necessário dividir em mais de uma diária)";
+  }
+
+  document.getElementById("horas").innerHTML=textoHoras;
+  document.getElementById("preco").innerHTML=preco.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+  var detalhes="Preço-base conforme metragem e tipo de limpeza.";
+  if(adicionalBanheiros>0 || adicionalQuartos>0){
+    detalhes+=" Inclui ajuste pela quantidade de ambientes.";
+  }
+  if(extras>0){
+    detalhes+=" Serviços extras adicionados ao orçamento.";
+  }
+  if(tamanho===5){
+    detalhes+=" Imóveis acima de 200 m² ficam sujeitos à confirmação final conforme condições e divisão do serviço.";
+  }
+
+  document.getElementById("detalhes").innerHTML=detalhes;
+  document.getElementById("resultado").style.display="block";
+  document.getElementById("erro").style.display="none";
+  document.getElementById("resultado").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function enviarWhatsApp(){
+  var cliente=document.getElementById("cliente").value.trim();
+  var telefone=document.getElementById("telefone").value.trim();
+  var resultado=document.getElementById("resultado");
+
+  if(resultado.style.display==="none" || resultado.style.display===""){
+    alert("Primeiro calcule o orçamento.");
+    return;
+  }
+
+  var tipoTexto=document.getElementById("tipo").options[document.getElementById("tipo").selectedIndex].text;
+  var tamanhoTexto=document.getElementById("tamanho").options[document.getElementById("tamanho").selectedIndex].text;
+  var ban=document.getElementById("banheiros").value;
+  var quartos=document.getElementById("quartos").value;
+  var horas=document.getElementById("horas").innerText;
+  var preco=document.getElementById("preco").innerText;
+
+  var extras=[];
+  var itens=document.querySelectorAll(".extraItem");
+  var labels=document.querySelectorAll(".extra");
+  for(var i=0;i<itens.length;i++){
+    if(itens[i].checked){
+      extras.push(labels[i].innerText.trim());
+    }
+  }
+
+  var mensagem="Olá! Gostaria de solicitar um orçamento da Eclean Limpezas.%0A%0A";
+  if(cliente) mensagem+="Nome: "+cliente+"%0A";
+  if(telefone) mensagem+="WhatsApp: "+telefone+"%0A";
+  mensagem+="Tipo de limpeza: "+tipoTexto+"%0A";
+  mensagem+="Tamanho do imóvel: "+tamanhoTexto+"%0A";
+  mensagem+="Quartos: "+quartos+"%0A";
+  mensagem+="Banheiros: "+ban+"%0A";
+  mensagem+="Serviços extras: "+(extras.length ? extras.join(", ") : "Nenhum")+"%0A";
+  mensagem+="Tempo estimado: "+horas+"%0A";
+  mensagem+="Valor estimado: "+preco+"%0A%0A";
+  mensagem+="Gostaria de confirmar o orçamento e verificar a disponibilidade.";
+
+  var url="https://wa.me/5542999224128?text="+encodeURIComponent(mensagem);
+  window.open(url,"_blank");
+}
+</script>
+</body>
+</html>
