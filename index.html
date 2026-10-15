@@ -158,7 +158,7 @@ function calcularOrcamento(){
   /*
    * Acima de 12h, a calculadora não promete uma única diária.
    * O preço continua sendo uma estimativa mínima e poderá ser ajustado
-   * pela Elô Clean após conferir as condições do imóvel.
+   * pela Eclean após conferir as condições do imóvel.
    */
   var maisDeUmaDiaria=horas>12;
   var horasExibicao=Math.min(horas,12);
@@ -216,17 +216,17 @@ function enviarWhatsApp(){
     }
   }
 
-  var mensagem="Olá! Gostaria de solicitar um orçamento da Elô Clean Limpezas.
-  if(cliente) mensagem+="Nome: "+cliente+"
-  if(telefone) mensagem+="WhatsApp: "+telefone+"
-  mensagem+="Tipo de limpeza: "+tipoTexto+"
-  mensagem+="Tamanho do imóvel: "+tamanhoTexto+"
-  mensagem+="Quartos: "+quartos+"
-  mensagem+="Banheiros: "+ban+"
-  mensagem+="Serviços extras: "+(extras.length ? extras.join(", ") : "Nenhum")+"
-  mensagem+="Tempo estimado: "+horas+"
-  mensagem+="Valor estimado: "+preco+"
-  mensagem+="Gostaria de confirmar o orçamento e verificar a disponibilidade."
+  var mensagem="Olá! Gostaria de solicitar um orçamento da Elô Clean Limpezas.%0A%0A";
+  if(cliente) mensagem+="Nome: "+cliente+"%0A";
+  if(telefone) mensagem+="WhatsApp: "+telefone+"%0A";
+  mensagem+="Tipo de limpeza: "+tipoTexto+"%0A";
+  mensagem+="Tamanho do imóvel: "+tamanhoTexto+"%0A";
+  mensagem+="Quartos: "+quartos+"%0A";
+  mensagem+="Banheiros: "+ban+"%0A";
+  mensagem+="Serviços extras: "+(extras.length ? extras.join(", ") : "Nenhum")+"%0A";
+  mensagem+="Tempo estimado: "+horas+"%0A";
+  mensagem+="Valor estimado: "+preco+"%0A%0A";
+  mensagem+="Gostaria de confirmar o orçamento e verificar a disponibilidade.";
 
   var url="https://wa.me/5542999224128?text="+encodeURIComponent(mensagem);
   window.open(url,"_blank");
